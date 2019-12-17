@@ -1,5 +1,5 @@
 <p align="center">
-  <img width="200" heihgt="200" margin-right="100%" src="https://github.com/Secozzi/CASpy/logo.png?raw=true">
+  <img width="200" heihgt="200" margin-right="100%" src="logo.png?raw=true">
 </p>
 ## CASpy
 
