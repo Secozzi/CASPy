@@ -8,13 +8,13 @@ A Computer Algebra System built using PyQt5 and Sympy
 
 ## Install
 
-Move following files to a folder: 
+⋅⋅* Move following files to a folder: 
 ```
 CAS.py
 logo.png
 desmos.html
 ```
-Install additional libraries
+⋅⋅* Install additional libraries
 
 ## Usage 
 
