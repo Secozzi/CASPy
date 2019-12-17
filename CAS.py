@@ -454,6 +454,8 @@ class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         lowerReg = QtCore.QRegExp("[a-z]+")
         lowerVal = QtGui.QRegExpValidator(lowerReg)
+        textReg = QtCore.QRegExp("[A-Za-z]+")
+        textVal = QtGui.QRegExpValidator(textReg)
 
         MainWindow.setObjectName("MainWindow")
         MainWindow.resize(1278, 806)
@@ -775,8 +777,7 @@ class Ui_MainWindow(object):
         self.EqVar = QtWidgets.QLineEdit(self.Eq)
         self.EqVar.setObjectName("EqVar")
         self.EqVar.setText("x")
-        self.EqVar.setValidator(lowerVal)
-        self.EqVar.setMaxLength(1)
+        self.EqVar.setValidator(textVal)
         self.gridLayout_5.addWidget(self.EqVar, 2, 0, 1, 1)
         self.tabWidget.addTab(self.Eq, "")
 
