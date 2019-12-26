@@ -1,0 +1,21 @@
+[
+    ["physics",
+        [
+            ["electricity", [
+                ["Wk=(m*v**2)/2", ["Wk|Work|J (joule)", "m;200|mass|kg (kilogram)", "v|velocity|ms/s (meters per second)"]],
+                ["U=R*i", ["U|Voltage|V (volts)", "R|Resistance|Ω (Ohm)", "i|Current|A (Ampere)"]],
+                ["P=W/t", ["P|Effect|W (watts)", "W|Work|J (joules)", "t|time|s (seconds)"]]
+            ]],
+            ["pressure", [
+                ["p=mgh idk"]
+            ]]
+        ]
+    ],
+    ["chemistry",
+        [
+            ["idfk", [
+                ["ok=idkf"]
+            ]]
+        ]
+    ]
+]

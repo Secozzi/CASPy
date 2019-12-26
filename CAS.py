@@ -9,6 +9,8 @@ from pyperclip import copy
 
 import os
 import sys
+import json
+import traceback
 
 class Ui_MainWindow(object):
     def __init__(self, *args, **kwargs):
@@ -102,8 +104,7 @@ class Ui_MainWindow(object):
             return 0
 
         if self.IntegLower.text():
-            self.exactAns = Integral(parse_expr(self.IntegExp.toPlainText()),
-                                     (parse_expr(self.IntegVar.text()), self.IntegLower.text(), self.IntegUpper.text()))
+            self.exactAns = Integral(parse_expr(self.IntegExp.toPlainText()), (parse_expr(self.IntegVar.text()), self.IntegLower.text(), self.IntegUpper.text()))
             if self.IntegPP.isChecked():
                 self.IntegOut.setText(str(pretty(self.exactAns)))
                 self.exactAns = str(pretty(self.exactAns))
@@ -149,7 +150,7 @@ class Ui_MainWindow(object):
             self.currentSide = "+"
 
         self.exactAns = Limit(parse_expr(self.LimExp.toPlainText()), parse_expr(self.LimVar.text()), self.LimApproach.text(), self.currentSide)
-        self.LimApprox = 0
+        self.approxAns = 0
         if self.LimPP.isChecked():
             self.LimOut.setText(str(pretty(self.exactAns)))
         elif self.LimLatex.isChecked():
@@ -231,6 +232,14 @@ class Ui_MainWindow(object):
         else:
             self.exactAns = str(self.exactAns)
             self.EvalOut.setText(self.exactAns)
+
+    def prevFormula(self):
+        try:
+            lines = [[self.FormulaScrollArea.findChild(QtWidgets.QLineEdit, str(i)+"line"),i] for i in self.labelNames]
+        except:
+            self.showErrorBox("Please select a formula")
+        else:
+            emptyVarList, varVarList, values = [], [], []
 
     def calcDeriv(self):
         if not self.DerivExp.toPlainText():
@@ -347,14 +356,13 @@ class Ui_MainWindow(object):
 
         try:
             self.exactAns = limit(parse_expr(self.LimExp.toPlainText()), parse_expr(self.LimVar.text()), self.LimApproach.text(), self.currentSide)
-            QApplication.processEvents()
         except ValueError:
             self.showErrorBox("Limit deos not exist")
             return 0
 
         self.approxAns = str(N(self.exactAns))
         self.LimApprox.setText(str(self.approxAns))
-        QApplication.processEvents()
+
         if self.LimPP.isChecked():
             self.LimOut.setText(str(pretty(self.exactAns)))
         elif self.LimLatex.isChecked():
@@ -450,6 +458,12 @@ class Ui_MainWindow(object):
         self.approxAns = 0
         self.exactAns = factorint(self.PfInput.value())
         self.PfOut.setText(str(self.exactAns))
+
+    def calcFormula(self):
+        pass
+
+    def selectedFormula(self):
+        pass
 
     def setupUi(self, MainWindow):
         lowerReg = QtCore.QRegExp("[a-z]+")
@@ -957,6 +971,81 @@ class Ui_MainWindow(object):
         self.gridGraph.addWidget(self.web, 0, 0, 1, 1)
         self.tabWidget.addTab(self.Graph, "")
 
+        self.Formula = QtWidgets.QWidget()
+        self.Formula.setObjectName("Formula")
+        self.FormulaGrid = QGridLayout(self.Formula)
+        self.FormulaGrid.setObjectName("FormulaGrid")
+        self.FormulaOutputLayout = QVBoxLayout()
+        self.FormulaOutputLayout.setObjectName("FormulaOutputLayout")
+        self.FormulaPreview = QPushButton(self.Formula)
+        self.FormulaPreview.setObjectName("FormulaPreview")
+        self.FormulaPreview.clicked.connect(self.prevFormula)
+        self.FormulaOutputLayout.addWidget(self.FormulaPreview)
+        self.FormulaCalculate = QPushButton(self.Formula)
+        self.FormulaCalculate.setObjectName("FormulaCalculate")
+        self.FormulaCalculate.clicked.connect(self.calcFormula)
+        self.FormulaOutputLayout.addWidget(self.FormulaCalculate)
+        self.FormulaOutTypeLayout = QHBoxLayout()
+        self.FormulaOutTypeLayout.setObjectName("FormulaOutTypeLayout")
+        self.FormulaOutTypeLabel = QLabel(self.Formula)
+        self.FormulaOutTypeLabel.setObjectName("FormulaOutTypeLabel")
+        self.FormulaOutputLayout.addWidget(self.FormulaOutTypeLabel)
+        self.FormulaPP = QRadioButton(self.Formula)
+        self.FormulaPP.setChecked(True)
+        self.FormulaPP.setObjectName("FormulaPP")
+        self.FormulaOutTypeLayout.addWidget(self.FormulaPP)
+        self.FormulaLatex = QRadioButton(self.Formula)
+        self.FormulaLatex.setObjectName("FormulaLatex")
+        self.FormulaOutTypeLayout.addWidget(self.FormulaLatex)
+        self.FormulaNormal = QRadioButton(self.Formula)
+        self.FormulaNormal.setObjectName("FormulaNormal")
+        self.FormulaOutTypeLayout.addWidget(self.FormulaNormal)
+        self.FormulaOutputLayout.addLayout(self.FormulaOutTypeLayout)
+        self.FormulaExact = QTextBrowser(self.Formula)
+        self.FormulaExact.setObjectName("FomulaExact")
+        self.FormulaOutputLayout.addWidget(self.FormulaExact)
+        self.FormulaApprox = QLineEdit(self.Formula)
+        self.FormulaApprox.setReadOnly(True)
+        self.FormulaApprox.setObjectName("FomulaApprox")
+        self.FormulaOutputLayout.addWidget(self.FormulaApprox)
+        self.FormulaGrid.addLayout(self.FormulaOutputLayout, 0, 1, 1, 1)
+        self.FormulaViewerLayout = QVBoxLayout()
+        self.FormulaViewerLayout.setObjectName("FormulaViewerLayout")
+        self.FormulaTree = QTreeWidget(self.Formula)
+        self.FormulaTree.setObjectName("FormulaTree")
+        self.FormulaTree.itemDoubleClicked.connect(self.selectedFormula)
+        f = open("formulas.json", "r")
+        self.FormulaTreeData = json.loads(f.read())
+        f.close()
+        for branch in self.FormulaTreeData:
+            parent = QTreeWidgetItem(self.FormulaTree)
+            parent.setText(0, branch[0])
+            for subBranch in branch[1]:
+                child = QTreeWidgetItem(parent)
+                child.setText(0, subBranch[0])
+                for formula in subBranch[1]:
+                    formulaChild = QTreeWidgetItem(child)
+                    formulaChild.setText(0, formula[0])
+        self.FormulaViewerLayout.addWidget(self.FormulaTree)
+        self.FormulaLine = QFrame(self.Formula)
+        self.FormulaLine.setFrameShape(QFrame.HLine)
+        self.FormulaLine.setFrameShadow(QFrame.Sunken)
+        self.FormulaLine.setObjectName("FormulaLine")
+        self.FormulaViewerLayout.addWidget(self.FormulaLine)
+        self.FormulaScroll = QScrollArea(self.Formula)
+        self.FormulaScroll.setEnabled(True)
+        self.FormulaScroll.setWidgetResizable(True)
+        self.FormulaScroll.setObjectName("FormulaScroll")
+        self.FormulaScrollArea = QWidget()
+        self.FormulaScrollArea.setGeometry(QRect(0, 0, 372, 364))
+        self.FormulaScrollArea.setObjectName("FormulaScrollArea")
+        self.FormulaGrid2 = QGridLayout(self.FormulaScrollArea)
+        self.FormulaGrid2.setObjectName("FormulaGrid2")
+        self.FormulaScroll.setWidget(self.FormulaScrollArea)
+        self.FormulaViewerLayout.addWidget(self.FormulaScroll)
+        self.FormulaGrid.addLayout(self.FormulaViewerLayout, 0, 0, 1, 1)
+        self.tabWidget.addTab(self.Formula, "")
+
         MainWindow.setCentralWidget(self.centralwidget)
         self.menubar = QtWidgets.QMenuBar(MainWindow)
         self.menubar.setGeometry(QtCore.QRect(0, 0, 678, 21))
@@ -1256,12 +1345,21 @@ class Ui_MainWindow(object):
         self.PfCalc.setWhatsThis(_translate("MainWindow", "Calculate"))
         self.PfCalc.setWhatsThis(_translate("MainWindow", "Calculate"))
         self.PfCalc.setText(_translate("MainWindow", "Calculate"))
+        self.FormulaPreview.setText(_translate("MainWindow", "Preview"))
+        self.FormulaCalculate.setText(_translate("MainWindow", "Calculate"))
+        self.FormulaOutTypeLabel.setText(_translate("MainWindow", "Output type"))
+        self.FormulaPP.setText(_translate("MainWindow", "PP"))
+        self.FormulaLatex.setText(_translate("MainWindow", "Latex"))
+        self.FormulaNormal.setText(_translate("MainWindow", "Normal"))
+        self.FormulaTree.headerItem().setText(0, _translate("MainWindow", "Formulas"))
+        self.FormulaTree.setSortingEnabled(True)
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.Eval), _translate("MainWindow", "Evaluate"))
         self.label_32.setText(_translate("MainWindow", "Number"))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.Pf), _translate("MainWindow", "Prime Factors"))
         self.menuCopy.setTitle(_translate("MainWindow", "Copy"))
         self.menuTab.setTitle(_translate("MainWindow", "Tab"))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.Graph), _translate("MainWindow", "Graph"))
+        self.tabWidget.setTabText(self.tabWidget.indexOf(self.Formula), _translate("MainWindow", "Formulas"))
         self.actionCopy_exact_answer.setText(_translate("MainWindow", "Copy exact answer"))
         self.actionCopy_exact_answer.setShortcut(_translate("MainWindow", "Ctrl+E"))
         self.actionCopy_exact_answer.triggered.connect(self.copyExact)
@@ -1282,15 +1380,15 @@ class Ui_MainWindow(object):
         self.actionLine_Wrap.triggered.connect(self.toggleWrap)
 
 if __name__ == "__main__":
-    ### For Debugging purposes, Removing the comments below will catch and print all errors that occurs
-    #def excepthook(exc_type, exc_value, exc_tb):
-    #    tb = "".join(traceback.format_exception(exc_type, exc_value, exc_tb))
-    #    print("error catched!:")
-    #    print("error message:\n", tb)
-    #    QtWidgets.QApplication.quit()
-    #sys.excepthook = excepthook
-    #e = Ui_MainWindow()
-    #print("Debug mode")
+    ### For Debugging purposes, Removing the comments from the next 6 rows will catch and print all errors that occurs
+    def excepthook(exc_type, exc_value, exc_tb):
+        tb = "".join(traceback.format_exception(exc_type, exc_value, exc_tb))
+        print("error catched!:")
+        print("error message:\n", tb)
+        QtWidgets.QApplication.quit()
+    sys.excepthook = excepthook
+    e = Ui_MainWindow()
+    print("Debug mode")
     app = QtWidgets.QApplication(sys.argv)
     MainWindow = QtWidgets.QMainWindow()
     ui = Ui_MainWindow()
