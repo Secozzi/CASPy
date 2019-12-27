@@ -7,14 +7,14 @@
                 ["P=W/t", ["P|Effect|W (watts)", "W|Work|J (joules)", "t|time|s (seconds)"]]
             ]],
             ["pressure", [
-                ["p=mgh idk"]
+                ["placeholder=placeholder"]
             ]]
         ]
     ],
     ["chemistry",
         [
-            ["idfk", [
-                ["ok=idkf"]
+            ["placeholder", [
+                ["placeholder=placeholder"]
             ]]
         ]
     ]

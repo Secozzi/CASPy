@@ -169,14 +169,14 @@ class Ui_MainWindow(object):
 
         self.approxAns = 0
         if self.EqPP.isChecked():
-            if self.EqOut.toPlainText():
+            if self.EqOut.toPlainText() == "" or self.EqOut.toPlainText()[0:10] == "Right side":
                 self.EqToOut = "Left side, click again for right side\n"
-                self.EqToOut += str(pretty(self.EqLeft.toPlainText()))
+                self.EqToOut += str(pretty(parse_expr(self.EqLeft.toPlainText())))
                 self.exactAns = self.EqToOut
                 self.EqOut.setText(self.exactAns)
             else:
                 self.EqToOut = "Right side, click again for left side\n"
-                self.EqToOut += str(pretty(self.EqRight.toPlainText()))
+                self.EqToOut += str(pretty(parse_expr(self.EqRight.toPlainText())))
                 self.exactAns = self.EqToOut
                 self.EqOut.setText(self.exactAns)
         elif self.EqLatex.isChecked():
@@ -185,6 +185,7 @@ class Ui_MainWindow(object):
         else:
             self.exactAns = str(self.EqLeft.toPlainText()) + " = " + str(self.EqRight.toPlainText())
             self.EqOut.setText(self.exactAns)
+        self.EqApprox.setText(str(self.approxAns))
 
     def prevSimpEq(self):
         if not self.SimpExp.toPlainText():
@@ -233,14 +234,6 @@ class Ui_MainWindow(object):
             self.exactAns = str(self.exactAns)
             self.EvalOut.setText(self.exactAns)
 
-    def prevFormula(self):
-        try:
-            lines = [[self.FormulaScrollArea.findChild(QtWidgets.QLineEdit, str(i)+"line"),i] for i in self.labelNames]
-        except:
-            self.showErrorBox("Please select a formula")
-        else:
-            emptyVarList, varVarList, values = [], [], []
-
     def calcDeriv(self):
         if not self.DerivExp.toPlainText():
             self.showErrorBox("Please enter an expression")
@@ -259,7 +252,6 @@ class Ui_MainWindow(object):
                 return 0
             else:
                 calcDerivP = str(self.exactAns).replace(self.DerivVar.text(), self.DerivPoint.text())
-                print(calcDerivP)
                 self.DerivApprox.setText(str(N(calcDerivP)))
                 QApplication.processEvents()
                 self.approxAns = str(N(calcDerivP))
@@ -459,11 +451,149 @@ class Ui_MainWindow(object):
         self.exactAns = factorint(self.PfInput.value())
         self.PfOut.setText(str(self.exactAns))
 
-    def calcFormula(self):
-        pass
+    def FormulaTreeSelected(self):
+        getSelected = self.FormulaTree.selectedItems()
+        if getSelected:
+            baseNode = getSelected[0]
+            self.selectedTreeItem = baseNode.text(0)
+            if "=" in self.selectedTreeItem:
+                expr = self.selectedTreeItem.split("=")
+                self.FormulaSymbolsList = []
+                [self.FormulaSymbolsList.append(i) for i in list(parse_expr(expr[0]).atoms(Symbol))]
+                [self.FormulaSymbolsList.append(i) for i in list(parse_expr(expr[1]).atoms(Symbol))]
+                self.FormulaSymbolsList = list(map(lambda x: str(x), self.FormulaSymbolsList))
+                self.FormulaUpdateVars()
+                self.FormulaInfo = self.FormulaGetInfo(self.selectedTreeItem, self.FormulaTreeData)
+                self.FormulaSetInfoText()
 
-    def selectedFormula(self):
-        pass
+    def FormulaSetInfoText(self):
+        _translate = QtCore.QCoreApplication.translate
+        lines = [[self.FormulaScrollArea.findChild(QtWidgets.QLineEdit, str(i) + "line"), i] for i in self.FormulaLabelNames]
+        for line in lines:
+            for i in self.FormulaInfo:
+                FormulaInfoList = i.split("|")
+                if FormulaInfoList[0] == line[1]:
+                    line[0].setStatusTip(_translate("MainWindow", f"{FormulaInfoList[1]}, measured in {FormulaInfoList[2]}"))
+                    line[0].setToolTip(_translate("MainWindow", FormulaInfoList[1]))
+                elif FormulaInfoList[0].split(";")[0] == line[1]:
+                    line[0].setStatusTip(_translate("MainWindow", f"{FormulaInfoList[1]}, measured in {FormulaInfoList[2]}"))
+                    line[0].setToolTip(_translate("MainWindow", FormulaInfoList[1]))
+                    line[0].setText(FormulaInfoList[0].split(";")[1])
+
+    def FormulaUpdateVars(self):
+        # Clear the scroll area of any labels and QLineEdits
+        for i in reversed(range(self.FormulaGrid2.count())):
+            self.FormulaGrid2.itemAt(i).widget().setParent(None)
+        # Generate, set name and position for labels and QLineEdits
+        self.FormulaLabelNames = self.FormulaSymbolsList
+        self.FormulaLabelPos = [[i, 0] for i in range(len(self.FormulaLabelNames))]
+        self.FormulaLinePos = [[i, 1] for i in range(len(self.FormulaLabelNames))]
+        for self.FormulaNameLabel, FormulaPosLabel, FormulaPosLine in zip(self.FormulaLabelNames, self.FormulaLabelPos, self.FormulaLinePos):
+            self.FormulaLabel = QLabel(self.FormulaScrollArea)
+            self.FormulaLabel.setText(self.FormulaNameLabel)
+            self.FormulaGrid2.addWidget(self.FormulaLabel, *FormulaPosLabel)
+            self.FormulaQLine = QLineEdit(self.FormulaScrollArea)
+            self.FormulaQLine.setObjectName(self.FormulaNameLabel + "line")
+            self.FormulaGrid2.addWidget(self.FormulaQLine, *FormulaPosLine)
+
+    # Retrieves info from given formula, note that two formulas cannot be the same
+    def FormulaGetInfo(self, text, data):
+        for branch in data:
+            for subBranch in branch[1]:
+                for formula in subBranch[1]:
+                    if formula[0] == text:
+                        return formula[1]
+
+    def prevFormula(self):
+        try:
+            lines = [[self.FormulaScrollArea.findChild(QtWidgets.QLineEdit, str(i) + "line"), i] for i in
+                     self.FormulaLabelNames]
+        except:
+            self.showErrorBox("Select a formula")
+        else:
+            emptyVarList, varVarList, values = [], [], []
+            for line in lines:
+                if line[0].text() == "":
+                    emptyVarList.append(line[1])
+                elif line[0].text() == "var":
+                    varVarList.append(line[1])
+                else:
+                    values.append([line[0].text(), line[1]])
+            if len(emptyVarList) > 1 and len(varVarList) != 1:
+                self.showErrorBox(
+                    "Solve for only one variable, if multiple empty lines type 'var' to solve for the variable")
+                return 0
+            if len(varVarList) == 1:
+                var = varVarList[0]
+            else:
+                var = emptyVarList[0]
+            valuesString = self.selectedTreeItem
+            leftSide = valuesString.split("=")[0]
+            rightSide = valuesString.split("=")[1]
+            self.exactAns = str(solve(Eq(parse_expr(leftSide), parse_expr(rightSide)), parse_expr(var)))
+            self.approxAns = 0
+            if self.FormulaPP.isChecked():
+                if self.FormulaExact.toPlainText() == "" or self.FormulaExact.toPlainText()[0:10] == "Right side":
+                    self.FormulaToOut = "Left side, click again for right side\n"
+                    self.FormulaToOut += str(pretty(parse_expr(var)))
+                    self.exactAns = self.FormulaToOut
+                    self.FormulaExact.setText(self.exactAns)
+                else:
+                    self.FormulaToOut = "Right side, click again for left side\n"
+                    self.FormulaToOut += str(pretty(parse_expr(self.exactAns)))
+                    self.exactAns = self.FormulaToOut
+                    self.FormulaExact.setText(self.exactAns)
+            elif self.FormulaLatex.isChecked():
+                self.exactAns = latex(parse_expr(var)) + " = " + latex(parse_expr(self.exactAns))
+                self.FormulaExact.setText(self.exactAns)
+            else:
+                self.exactAns = str(var) + " = " + str(self.exactAns)
+                self.FormulaExact.setText(self.exactAns)
+            self.FormulaApprox.setText(str(self.approxAns))
+
+    def calcFormula(self):
+        try:
+            lines = [[self.FormulaScrollArea.findChild(QtWidgets.QLineEdit, str(i) + "line"), i] for i in
+                     self.FormulaLabelNames]
+        except:
+            self.showErrorBox("Select a formula")
+        else:
+            emptyVarList, varVarList, values = [], [], []
+            for line in lines:
+                if line[0].text() == "":
+                    emptyVarList.append(line[1])
+                elif line[0].text() == "var":
+                    varVarList.append(line[1])
+                else:
+                    values.append([line[0].text(), line[1]])
+            if len(emptyVarList) > 1 and len(varVarList) != 1:
+                self.showErrorBox(
+                    "Solve for only one variable, if multiple empty lines type 'var' to solve for the variable")
+                return 0
+            if len(varVarList) == 1:
+                var = varVarList[0]
+            else:
+                var = emptyVarList[0]
+            valuesString = self.selectedTreeItem
+            for i in values:
+                valuesString = valuesString.replace(i[1], f"({i[0]})")
+            leftSide = valuesString.split("=")[0]
+            rightSide = valuesString.split("=")[1]
+            if self.FormulaSolveSolve.isChecked():
+                self.exactAns = solve(Eq(parse_expr(leftSide), parse_expr(rightSide)), parse_expr(var))
+                self.approxAns = list(map(lambda x: N(x), self.exactAns))
+            if self.FormulaSolveSolveSet.isChecked():
+                self.exactAns = solveset(Eq(parse_expr(leftSide), parse_expr(rightSide)), parse_expr(var))
+                self.approxAns = 0
+            if self.FormulaPP.isChecked():
+                self.FormulaExact.setText(str(pretty(self.exactAns)))
+                self.FormulaApprox.setText(str(self.approxAns))
+            elif self.FormulaLatex.isChecked():
+                self.FormulaExact.setText(str(latex(self.exactAns)))
+                self.FormulaApprox.setText(str(self.approxAns))
+            else:
+                self.FormulaExact.setText(str(self.exactAns))
+                self.FormulaApprox.setText(str(self.approxAns))
 
     def setupUi(self, MainWindow):
         lowerReg = QtCore.QRegExp("[a-z]+")
@@ -977,6 +1107,20 @@ class Ui_MainWindow(object):
         self.FormulaGrid.setObjectName("FormulaGrid")
         self.FormulaOutputLayout = QVBoxLayout()
         self.FormulaOutputLayout.setObjectName("FormulaOutputLayout")
+        self.FormulaSolveGroup = QButtonGroup(MainWindow)
+        self.FormulaSolveGroup.setObjectName("FormulaSolveGroup")
+        self.FormulaSolveLayout = QHBoxLayout()
+        self.FormulaSolveLayout.setObjectName("FormulaSolveLayout")
+        self.FormulaSolveSolve = QRadioButton(self.Formula)
+        self.FormulaSolveSolve.setObjectName("FormulaSolveSolve")
+        self.FormulaSolveSolve.setChecked(True)
+        self.FormulaSolveGroup.addButton(self.FormulaSolveSolve)
+        self.FormulaSolveLayout.addWidget(self.FormulaSolveSolve)
+        self.FormulaSolveSolveSet = QRadioButton(self.Formula)
+        self.FormulaSolveSolveSet.setObjectName("FormulaSolveSolveSet")
+        self.FormulaSolveGroup.addButton(self.FormulaSolveSolveSet)
+        self.FormulaSolveLayout.addWidget(self.FormulaSolveSolveSet)
+        self.FormulaOutputLayout.addLayout(self.FormulaSolveLayout)
         self.FormulaPreview = QPushButton(self.Formula)
         self.FormulaPreview.setObjectName("FormulaPreview")
         self.FormulaPreview.clicked.connect(self.prevFormula)
@@ -989,7 +1133,7 @@ class Ui_MainWindow(object):
         self.FormulaOutTypeLayout.setObjectName("FormulaOutTypeLayout")
         self.FormulaOutTypeLabel = QLabel(self.Formula)
         self.FormulaOutTypeLabel.setObjectName("FormulaOutTypeLabel")
-        self.FormulaOutputLayout.addWidget(self.FormulaOutTypeLabel)
+        self.FormulaOutTypeLayout.addWidget(self.FormulaOutTypeLabel)
         self.FormulaPP = QRadioButton(self.Formula)
         self.FormulaPP.setChecked(True)
         self.FormulaPP.setObjectName("FormulaPP")
@@ -1013,7 +1157,7 @@ class Ui_MainWindow(object):
         self.FormulaViewerLayout.setObjectName("FormulaViewerLayout")
         self.FormulaTree = QTreeWidget(self.Formula)
         self.FormulaTree.setObjectName("FormulaTree")
-        self.FormulaTree.itemDoubleClicked.connect(self.selectedFormula)
+        self.FormulaTree.itemDoubleClicked.connect(self.FormulaTreeSelected)
         f = open("formulas.json", "r")
         self.FormulaTreeData = json.loads(f.read())
         f.close()
@@ -1348,6 +1492,12 @@ class Ui_MainWindow(object):
         self.FormulaPreview.setText(_translate("MainWindow", "Preview"))
         self.FormulaCalculate.setText(_translate("MainWindow", "Calculate"))
         self.FormulaOutTypeLabel.setText(_translate("MainWindow", "Output type"))
+        self.FormulaSolveSolve.setText(_translate("MainWindow", "Solve"))
+        self.FormulaSolveSolve.setStatusTip(_translate("MainWindow", "See Sympy Solve vs Solveset"))
+        self.FormulaSolveSolve.setWhatsThis(_translate("MainWindow", "See Sympy Solve vs Solveset"))
+        self.FormulaSolveSolveSet.setText(_translate("MainWindow", "Solveset"))
+        self.FormulaSolveSolveSet.setStatusTip(_translate("MainWindow", "See Sympy Solve vs Solveset"))
+        self.FormulaSolveSolveSet.setWhatsThis(_translate("MainWindow", "See Sympy Solve vs Solveset"))
         self.FormulaPP.setText(_translate("MainWindow", "PP"))
         self.FormulaLatex.setText(_translate("MainWindow", "Latex"))
         self.FormulaNormal.setText(_translate("MainWindow", "Normal"))
