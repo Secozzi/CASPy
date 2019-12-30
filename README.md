@@ -27,5 +27,6 @@ json
 sys
 sympy
 PyQt5
+PyQtWebEngine
 ```
 
