@@ -1,10 +1,17 @@
+# -*- coding: utf-8 -*-
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
 from PyQt5.QtGui import QFont
 from PyQt5.QtWebEngineWidgets import *
+
 from sympy import *
 from sympy.parsing.sympy_parser import parse_expr
+from sympy.abc import _clash1
+x, y, z, t = symbols('x y z t')
+k, m, n = symbols('k m n', integer=True)
+f, g, h = symbols('f g h', cls=Function)
+
 from pyperclip import copy
 
 import os
@@ -458,9 +465,10 @@ class Ui_MainWindow(object):
             self.selectedTreeItem = baseNode.text(0)
             if "=" in self.selectedTreeItem:
                 expr = self.selectedTreeItem.split("=")
+                #expr = list(map(lambda x: x.replace("_i", "(sqrt(-1))"), expr))
                 self.FormulaSymbolsList = []
-                [self.FormulaSymbolsList.append(i) for i in list(parse_expr(expr[0]).atoms(Symbol))]
-                [self.FormulaSymbolsList.append(i) for i in list(parse_expr(expr[1]).atoms(Symbol))]
+                [self.FormulaSymbolsList.append(i) for i in list(parse_expr(expr[0], _clash1).atoms(Symbol))]
+                [self.FormulaSymbolsList.append(i) for i in list(parse_expr(expr[1], _clash1).atoms(Symbol))]
                 self.FormulaSymbolsList = list(map(lambda x: str(x), self.FormulaSymbolsList))
                 self.FormulaUpdateVars()
                 self.FormulaInfo = self.FormulaGetInfo(self.selectedTreeItem, self.FormulaTreeData)
@@ -473,10 +481,10 @@ class Ui_MainWindow(object):
             for i in self.FormulaInfo:
                 FormulaInfoList = i.split("|")
                 if FormulaInfoList[0] == line[1]:
-                    line[0].setStatusTip(_translate("MainWindow", f"{FormulaInfoList[1]}, measured in {FormulaInfoList[2]}"))
+                    line[0].setStatusTip(_translate("MainWindow", f"{FormulaInfoList[1]}, mäts i {FormulaInfoList[2]}"))
                     line[0].setToolTip(_translate("MainWindow", FormulaInfoList[1]))
                 elif FormulaInfoList[0].split(";")[0] == line[1]:
-                    line[0].setStatusTip(_translate("MainWindow", f"{FormulaInfoList[1]}, measured in {FormulaInfoList[2]}"))
+                    line[0].setStatusTip(_translate("MainWindow", f"{FormulaInfoList[1]}, mäts i {FormulaInfoList[2]}"))
                     line[0].setToolTip(_translate("MainWindow", FormulaInfoList[1]))
                     line[0].setText(FormulaInfoList[0].split(";")[1])
 
@@ -530,17 +538,17 @@ class Ui_MainWindow(object):
             valuesString = self.selectedTreeItem
             leftSide = valuesString.split("=")[0]
             rightSide = valuesString.split("=")[1]
-            self.exactAns = str(solve(Eq(parse_expr(leftSide), parse_expr(rightSide)), parse_expr(var)))
+            self.exactAns = solve(Eq(parse_expr(leftSide, _clash1), parse_expr(rightSide, _clash1)), parse_expr(var, _clash1))
             self.approxAns = 0
             if self.FormulaPP.isChecked():
                 if self.FormulaExact.toPlainText() == "" or self.FormulaExact.toPlainText()[0:10] == "Right side":
                     self.FormulaToOut = "Left side, click again for right side\n"
-                    self.FormulaToOut += str(pretty(parse_expr(var)))
+                    self.FormulaToOut += str(pretty(parse_expr(var, _clash1)))
                     self.exactAns = self.FormulaToOut
                     self.FormulaExact.setText(self.exactAns)
                 else:
                     self.FormulaToOut = "Right side, click again for left side\n"
-                    self.FormulaToOut += str(pretty(parse_expr(self.exactAns)))
+                    self.FormulaToOut += str(pretty(self.exactAns))
                     self.exactAns = self.FormulaToOut
                     self.FormulaExact.setText(self.exactAns)
             elif self.FormulaLatex.isChecked():
@@ -580,10 +588,10 @@ class Ui_MainWindow(object):
             leftSide = valuesString.split("=")[0]
             rightSide = valuesString.split("=")[1]
             if self.FormulaSolveSolve.isChecked():
-                self.exactAns = solve(Eq(parse_expr(leftSide), parse_expr(rightSide)), parse_expr(var))
+                self.exactAns = solve(Eq(parse_expr(leftSide, _clash1), parse_expr(rightSide, _clash1)), parse_expr(var, _clash1))
                 self.approxAns = list(map(lambda x: N(x), self.exactAns))
             if self.FormulaSolveSolveSet.isChecked():
-                self.exactAns = solveset(Eq(parse_expr(leftSide), parse_expr(rightSide)), parse_expr(var))
+                self.exactAns = solveset(Eq(parse_expr(leftSide, _clash1), parse_expr(rightSide, _clash1)), parse_expr(var, _clash1))
                 self.approxAns = 0
             if self.FormulaPP.isChecked():
                 self.FormulaExact.setText(str(pretty(self.exactAns)))
@@ -594,6 +602,52 @@ class Ui_MainWindow(object):
             else:
                 self.FormulaExact.setText(str(self.exactAns))
                 self.FormulaApprox.setText(str(self.approxAns))
+
+    def executeCode(self):
+        self.consoleIn.moveCursor(QtGui.QTextCursor.End)
+        self.NewCode = self.consoleIn.toPlainText().replace(self.currentCode, "")
+        if self.NewCode:
+            if self.NewCode[0] == "\n":
+                self.NewCode = self.NewCode[1:]
+        if self.NewCode[0:4] == ">>> ":
+            self.NewCode = self.NewCode[4:]
+        self.NewCode = self.NewCode.replace("... ", "")
+        self.toExecute = ""
+        for i in self.alreadyExecuted:
+            self.toExecute += f"{i}\n"
+        self.toExecute += self.NewCode
+        self.toExecute = self.toExecute.replace("\n\t", "|")
+        for command in self.toExecute.split("\n"):
+            newToExec = command.replace("|", "\n\t")
+            try:
+                exec(f"print({newToExec})")
+            except:
+                try:
+                    exec(newToExec)
+                except Exception as e:
+                    self.consoleIn.insertPlainText(f"\nerror: {e}")
+                else:
+                    if newToExec not in self.alreadyExecuted:
+                        self.alreadyExecuted.append(newToExec)
+            else:
+                self.consoleIn.insertPlainText("\n")
+                exec(f"self.consoleIn.insertPlainText(str({newToExec}))")
+                exec(f"self.exactAns = str({newToExec})")
+                self.consoleIn.insertPlainText("\n")
+
+        self.currentCode = self.consoleIn.toPlainText()
+        self.consoleIn.insertPlainText("\n>>> ")
+        self.consoleIn.moveCursor(QtGui.QTextCursor.End)
+
+    def updateWeb(self, action):
+        if action.text() == "Desmos":
+            desmos_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "desmos.html"))
+            self.web.load(QUrl.fromLocalFile(desmos_path))
+        else:
+            for i in self.WebList:
+                for key in i:
+                    if action.text() == key:
+                        self.web.load(QUrl(i[key]))
 
     def setupUi(self, MainWindow):
         lowerReg = QtCore.QRegExp("[a-z]+")
@@ -1091,15 +1145,15 @@ class Ui_MainWindow(object):
         self.tabWidget.addTab(self.Pf, "")
         self.gridLayout.addWidget(self.tabWidget, 0, 0, 1, 1)
 
-        self.Graph = QtWidgets.QWidget()
-        self.Graph.setObjectName("Graph")
-        self.gridGraph = QtWidgets.QGridLayout(self.Graph)
-        self.gridGraph.setObjectName("gridGraph")
+        self.Web = QtWidgets.QWidget()
+        self.Web.setObjectName("Web")
+        self.gridWeb = QtWidgets.QGridLayout(self.Web)
+        self.gridWeb.setObjectName("gridWeb")
         self.web = QWebEngineView()
         desmos_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "desmos.html"))
         self.web.load(QUrl.fromLocalFile(desmos_path))
-        self.gridGraph.addWidget(self.web, 0, 0, 1, 1)
-        self.tabWidget.addTab(self.Graph, "")
+        self.gridWeb.addWidget(self.web, 0, 0, 1, 1)
+        self.tabWidget.addTab(self.Web, "")
 
         self.Formula = QtWidgets.QWidget()
         self.Formula.setObjectName("Formula")
@@ -1158,15 +1212,15 @@ class Ui_MainWindow(object):
         self.FormulaTree = QTreeWidget(self.Formula)
         self.FormulaTree.setObjectName("FormulaTree")
         self.FormulaTree.itemDoubleClicked.connect(self.FormulaTreeSelected)
-        f = open("formulas.json", "r")
-        self.FormulaTreeData = json.loads(f.read())
-        f.close()
+        with open("formulas.json", encoding='utf-8') as f:
+            self.FormulaTreeData = json.loads(f.read())
+        self.FormulaTreeData = self.FormulaTreeData[0]
         for branch in self.FormulaTreeData:
             parent = QTreeWidgetItem(self.FormulaTree)
-            parent.setText(0, branch[0])
+            parent.setText(0, str(branch[0]))
             for subBranch in branch[1]:
                 child = QTreeWidgetItem(parent)
-                child.setText(0, subBranch[0])
+                child.setText(0, str(subBranch[0]))
                 for formula in subBranch[1]:
                     formulaChild = QTreeWidgetItem(child)
                     formulaChild.setText(0, formula[0])
@@ -1190,6 +1244,26 @@ class Ui_MainWindow(object):
         self.FormulaGrid.addLayout(self.FormulaViewerLayout, 0, 0, 1, 1)
         self.tabWidget.addTab(self.Formula, "")
 
+        self.Shell = QtWidgets.QWidget()
+        self.Shell.setObjectName("Shell")
+        self.currentCode = "This is a very simple shell using 'exec' commands, so it has some limitations.\nEvery variable declared and function defined will be saved until the program is closed or when the 'clear commands' button in the menubar is pressed.\nIt will automatically output to the shell, but it can't use 'print' commands. To copy output, press the 'copy exact answer' in the menubar\nTheses commands were executed:\nfrom __future__ import division\nfrom sympy import *\nfrom sympy.parsing.sympy_parser import parse_expr\nfrom sympy.abc import _clash1\nx, y, z, t = symbols('x y z t')\nk, m, n = symbols('k m n', integer=True)\nf, g, h = symbols('f g h', cls=Function)\n\n>>> "
+        self.toExecute = ""
+        self.alreadyExecuted = []
+        self.ShellGrid = QGridLayout(self.Shell)
+        self.ShellGrid.setObjectName("ShellGrid")
+        self.consoleIn = QPlainTextEdit(self.centralwidget)
+        self.consoleIn.setObjectName("consoleIn")
+        self.consoleIn.setLineWrapMode(QPlainTextEdit.NoWrap)
+        self.consoleIn.insertPlainText(self.currentCode)
+        self.consoleIn.setTabStopWidth(40)
+        self.consoleIn.setTabStopDistance(40.0)
+        self.ShellGrid.addWidget(self.consoleIn, 0, 0, 1, 1)
+        self.ShellRun = QPushButton(self.centralwidget)
+        self.ShellRun.setObjectName("ShellRun")
+        self.ShellRun.clicked.connect(self.executeCode)
+        self.ShellGrid.addWidget(self.ShellRun, 1, 0, 1, 1)
+        self.tabWidget.addTab(self.Shell, "")
+
         MainWindow.setCentralWidget(self.centralwidget)
         self.menubar = QtWidgets.QMenuBar(MainWindow)
         self.menubar.setGeometry(QtCore.QRect(0, 0, 678, 21))
@@ -1200,6 +1274,21 @@ class Ui_MainWindow(object):
         self.menuTab.setObjectName("menuTab")
         self.menuSettings = QtWidgets.QMenu(self.menubar)
         self.menuSettings.setObjectName("menuSettings")
+        self.menuWeb = QtWidgets.QMenu(self.menubar)
+        self.menuWeb.setObjectName("menuWeb")
+        with open("formulas.json", encoding='utf-8') as f:
+            self.WebList = json.loads(f.read())
+        self.WebList = self.WebList[1]
+        webGroup = QActionGroup(self.menuWeb)
+        for i in self.WebList:
+            for key in i:
+                webAction = QAction(key, self.menuWeb, checkable=True)
+                if webAction.text() == "Desmos":
+                    webAction.setChecked(True)
+                self.menuWeb.addAction(webAction)
+                webGroup.addAction(webAction)
+        webGroup.setExclusive(True)
+        webGroup.triggered.connect(self.updateWeb)
         MainWindow.setMenuBar(self.menubar)
         self.statusbar = QtWidgets.QStatusBar(MainWindow)
         self.statusbar.setObjectName("statusbar")
@@ -1227,6 +1316,7 @@ class Ui_MainWindow(object):
         self.menuTab.addAction(self.actionPrevious_Tab)
         self.menubar.addAction(self.menuCopy.menuAction())
         self.menubar.addAction(self.menuTab.menuAction())
+        self.menubar.addAction(self.menuWeb.menuAction())
         self.retranslateUi(MainWindow)
         self.tabWidget.setCurrentIndex(0)
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
@@ -1506,9 +1596,11 @@ class Ui_MainWindow(object):
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.Eval), _translate("MainWindow", "Evaluate"))
         self.label_32.setText(_translate("MainWindow", "Number"))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.Pf), _translate("MainWindow", "Prime Factors"))
+        self.ShellRun.setText(_translate("MainWindow", "Run"))
+        self.tabWidget.setTabText(self.tabWidget.indexOf(self.Shell), _translate("MainWindow", "Shell"))
         self.menuCopy.setTitle(_translate("MainWindow", "Copy"))
         self.menuTab.setTitle(_translate("MainWindow", "Tab"))
-        self.tabWidget.setTabText(self.tabWidget.indexOf(self.Graph), _translate("MainWindow", "Graph"))
+        self.tabWidget.setTabText(self.tabWidget.indexOf(self.Web), _translate("MainWindow", "Web"))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.Formula), _translate("MainWindow", "Formulas"))
         self.actionCopy_exact_answer.setText(_translate("MainWindow", "Copy exact answer"))
         self.actionCopy_exact_answer.setShortcut(_translate("MainWindow", "Ctrl+E"))
@@ -1528,6 +1620,7 @@ class Ui_MainWindow(object):
         self.actionLine_Wrap.setText(_translate("MainWindow", "Line Wrap"))
         self.actionLine_Wrap.setShortcut(_translate("Mainwindow", "Ctrl+L"))
         self.actionLine_Wrap.triggered.connect(self.toggleWrap)
+        self.menuWeb.setTitle(_translate("MainWindow", "Web"))
 
 if __name__ == "__main__":
     ### For Debugging purposes, Removing the comments from the next 6 rows will catch and print all errors that occurs

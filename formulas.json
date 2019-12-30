@@ -1,21 +1,58 @@
 [
-    ["physics",
+[
+    ["Fysik",
         [
-            ["electricity", [
-                ["Wk=(m*v**2)/2", ["Wk|Work|J (joule)", "m;200|mass|kg (kilogram)", "v|velocity|ms/s (meters per second)"]],
-                ["U=R*i", ["U|Voltage|V (volts)", "R|Resistance|Ω (Ohm)", "i|Current|A (Ampere)"]],
-                ["P=W/t", ["P|Effect|W (watts)", "W|Work|J (joules)", "t|time|s (seconds)"]]
+            ["Elektriska och magnetiska fält", [
+                ["B=(μ*I)/(2*pi*r)", ["B|Magnetisk flödestäthet, kring oändlig lång rak ledare|T (Tesla)", "μ|Permeabilitet|H/m (henry per meter)", "I|Ström|A (Ampere)", "r|radie|m (meter)"]],
+                ["B=(μ*N*I)/(2*r)", ["B|Magnetisk flödestäthet, kring oändlig lång rak ledare|T (Tesla)", "μ|Permeabilitet|H/m (henry per meter)", "I|Ström|A (Ampere)", "r|radie|m (meter)", "N|Antal varv|st (styck)"]],
+                ["B=(μ*N*I)/l", ["B|Magnetisk flödestäthet, kring oändlig lång rak ledare|T (Tesla)", "μ|Permeabilitet|H/m (henry per meter)", "I|Ström|A (Ampere)", "l|längd|m (meter)", "N|Antal varv|st (styck)"]]
             ]],
-            ["pressure", [
-                ["placeholder=placeholder"]
+            ["Elektriska krafter", [
+
+            ]],
+            ["Ellära" , [
+                [""]
+            ]],
+            ["Energi" , [
+                [""]
+            ]],
+            ["Krafter" , [
+                [""]
+            ]],
+            ["Ljud" , [
+                [""]
+            ]],
+            ["Mekanik" , [
+                [""]
+            ]],
+            ["Optik" , [
+                [""]
+            ]],
+            ["Rörelse" , [
+                [""]
+            ]],
+            ["Termofysik" , [
+                [""]
+            ]],
+            ["Vågrörelselära" , [
+                [""]
             ]]
         ]
     ],
-    ["chemistry",
+    ["Kemi",
         [
             ["placeholder", [
                 ["placeholder=placeholder"]
             ]]
         ]
+    ]
+],
+    [
+        {"WolframAlpha":  "https://www.wolframalpha.com"},
+        {"Symbolab":  "https://www.symbolab.com"},
+        {"Desmos":  "desmos"},
+        {"GeoGebra": "https://www.geogebra.org/graphing"},
+        {"GeoGebra 3D": "https://www.geogebra.org/3d?lang=en"},
+        {"CalcPlot3D":  "https://www.monroecc.edu/faculty/paulseeburger/calcnsf/CalcPlot3D/"}
     ]
 ]

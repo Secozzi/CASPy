@@ -8,31 +8,24 @@ A Computer Algebra System built using PyQt5 and Sympy
 
 ## Install
 
-* Move following files to a folder: 
+* Run command: 
 ```
-CAS.py
-logo.png
-desmos.html
+git clone https://github.com/Secozzi/CASpy.git
 ```
 * Install additional libraries
 
 ## Usage 
 
-Run CAS.py
+Run main.py
 
 ## Libraries used
 
 ```
-from PyQt5 import QtCore, QtGui, QtWidgets
-from PyQt5.QtWidgets import *
-from PyQt5.QtCore import *
-from PyQt5.QtGui import QFont
-from PyQt5.QtWebEngineWidgets import *
-from sympy import *
-from sympy.parsing.sympy_parser import parse_expr
-from pyperclip import copy
-
-import os
-import sys
+os
+traceback
+json
+sys
+sympy
+PyQt5
 ```
 
