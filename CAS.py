@@ -8,6 +8,7 @@ from PyQt5.QtWebEngineWidgets import *
 from sympy import *
 from sympy.parsing.sympy_parser import parse_expr
 from sympy.abc import _clash1
+
 x, y, z, t = symbols('x y z t')
 k, m, n = symbols('k m n', integer=True)
 f, g, h = symbols('f g h', cls=Function)
@@ -19,11 +20,14 @@ import sys
 import json
 import traceback
 
+
 class Ui_MainWindow(object):
     def __init__(self, *args, **kwargs):
         super(Ui_MainWindow, self).__init__(*args, **kwargs)
 
         self.exactAns = ""
+        self.currentSide = ""
+
         self.approxAns = 0
 
         self.useUniC = False
@@ -85,15 +89,14 @@ class Ui_MainWindow(object):
             self.showErrorBox("Please enter a variable")
             return 0
         self.approxAns = 0
+        derivative = Derivative(str(self.DerivExp.toPlainText()), self.DerivVar.text(), self.DerivOrder.value())
         if self.DerivPP.isChecked():
-            self.DerivOut.setText(str(pretty(Derivative(str(self.DerivExp.toPlainText()),self.DerivVar.text(),self.DerivOrder.value()))))
-            self.exactAns = str(pretty(Derivative(str(self.DerivExp.toPlainText()),self.DerivVar.text(),self.DerivOrder.value())))
+            self.exactAns = str(pretty(derivative))
         elif self.DerivLatex.isChecked():
-            self.DerivOut.setText(str(latex(Derivative(str(self.DerivExp.toPlainText()),self.DerivVar.text(),self.DerivOrder.value()))))
-            self.exactAns = str(latex(Derivative(str(self.DerivExp.toPlainText()),self.DerivVar.text(),self.DerivOrder.value())))
+            self.exactAns = str(latex(derivative))
         else:
-            self.DerivOut.setText(str(Derivative(str(self.DerivExp.toPlainText()),self.DerivVar.text(),self.DerivOrder.value())))
-            self.exactAns = str(Derivative(str(self.DerivExp.toPlainText()),self.DerivVar.text(),self.DerivOrder.value()))
+            self.exactAns = str(derivative)
+        self.DerivOut.setText(self.exactAns)
 
     def prevInteg(self):
         if not self.IntegExp.toPlainText():
@@ -105,35 +108,31 @@ class Ui_MainWindow(object):
             return 0
 
         self.approxAns = 0
-        if (self.IntegLower.text() and not self.IntegUpper.text()) or (
-                not self.IntegLower.text() and self.IntegUpper.text()):
+        if (self.IntegLower.text() and not self.IntegUpper.text()) or (not self.IntegLower.text() and self.IntegUpper.text()):
             self.showErrorBox("Please enter both upper and lower")
             return 0
 
         if self.IntegLower.text():
-            self.exactAns = Integral(parse_expr(self.IntegExp.toPlainText()), (parse_expr(self.IntegVar.text()), self.IntegLower.text(), self.IntegUpper.text()))
+            self.exactAns = Integral(parse_expr(self.IntegExp.toPlainText()),
+                                     (parse_expr(self.IntegVar.text()), self.IntegLower.text(), self.IntegUpper.text()))
             if self.IntegPP.isChecked():
-                self.IntegOut.setText(str(pretty(self.exactAns)))
-                self.exactAns = str(pretty(self.exactAns))
+                self.exactAns = pretty(self.exactAns)
             elif self.IntegLatex.isChecked():
-                self.IntegOut.setText(str(latex(self.exactAns)))
-                self.exactAns = str(latex(self.exactAns))
-            else:
-                self.IntegOut.setText(str(self.exactAns))
-                self.exactAns = str(self.exactAns)
+                self.exactAns = latex(self.exactAns)
+
+            self.exactAns = str(self.exactAns)
+            self.IntegOut.setText(self.exactAns)
 
         else:
             self.exactAns = Integral(parse_expr(self.IntegExp.toPlainText()), parse_expr(self.IntegVar.text()))
 
             if self.IntegPP.isChecked():
-                self.IntegOut.setText(str(pretty(self.exactAns)))
-                self.exactAns = str(pretty(self.exactAns))
+                self.exactAns = pretty(self.exactAns)
             elif self.IntegLatex.isChecked():
-                self.IntegOut.setText(str(latex(self.exactAns)))
-                self.exactAns = str(latex(self.exactAns))
-            else:
-                self.IntegOut.setText(str(self.exactAns))
-                self.exactAns = str(self.exactAns)
+                self.exactAns = latex(self.exactAns)
+
+            self.exactAns = str(self.exactAns)
+            self.IntegOut.setText(self.exactAns)
 
     def prevLimit(self):
         if not self.LimExp.toPlainText():
@@ -148,7 +147,6 @@ class Ui_MainWindow(object):
             self.showErrorBox("Please enter a variable")
             return 0
 
-        self.currentSide = ""
         if self.LimSide.currentIndex() == 0:
             self.currentSide = "+-"
         elif self.LimSide.currentIndex() == 1:
@@ -156,7 +154,8 @@ class Ui_MainWindow(object):
         else:
             self.currentSide = "+"
 
-        self.exactAns = Limit(parse_expr(self.LimExp.toPlainText()), parse_expr(self.LimVar.text()), self.LimApproach.text(), self.currentSide)
+        self.exactAns = Limit(parse_expr(self.LimExp.toPlainText()), parse_expr(self.LimVar.text()),
+                              self.LimApproach.text(), self.currentSide)
         self.approxAns = 0
         if self.LimPP.isChecked():
             self.LimOut.setText(str(pretty(self.exactAns)))
@@ -187,7 +186,8 @@ class Ui_MainWindow(object):
                 self.exactAns = self.EqToOut
                 self.EqOut.setText(self.exactAns)
         elif self.EqLatex.isChecked():
-            self.exactAns = latex(parse_expr(self.EqLeft.toPlainText())) + " = " + latex(parse_expr(self.EqRight.toPlainText()))
+            self.exactAns = latex(parse_expr(self.EqLeft.toPlainText())) + " = " + latex(
+                parse_expr(self.EqRight.toPlainText()))
             self.EqOut.setText(self.exactAns)
         else:
             self.exactAns = str(self.EqLeft.toPlainText()) + " = " + str(self.EqRight.toPlainText())
@@ -250,11 +250,12 @@ class Ui_MainWindow(object):
             self.showErrorBox("Please enter a variable")
             return 0
 
-        self.exactAns = diff(parse_expr(self.DerivExp.toPlainText()), parse_expr(self.DerivVar.text()), self.DerivOrder.value())
+        self.exactAns = diff(parse_expr(self.DerivExp.toPlainText()), parse_expr(self.DerivVar.text()),
+                             self.DerivOrder.value())
         QApplication.processEvents()
 
         if self.DerivPoint.text():
-            if any(x in list("abcdefghijklmnopqrstuvwxuzABCDEFGHIJKLMNOPQRSTUVWXYZ") for x in list(str(N(self.DerivPoint.text())))):
+            if any(x in "abcdefghijklmnopqrstuvwxuzABCDEFGHIJKLMNOPQRSTUVWXYZ" for x in str(N(self.DerivPoint.text()))):
                 self.showErrorBox("Point is not a valid number")
                 return 0
             else:
@@ -264,23 +265,21 @@ class Ui_MainWindow(object):
                 self.approxAns = str(N(calcDerivP))
                 QApplication.processEvents()
                 if self.DerivPP.isChecked():
-                    self.DerivOut.setText(str(pretty(simplify(calcDerivP))))
                     self.exactAns = str(pretty(simplify(calcDerivP)))
                 elif self.DerivLatex.isChecked():
-                    self.DerivOut.setText(str(latex(simplify(calcDerivP))))
                     self.exactAns = str(latex(simplify(calcDerivP)))
                 else:
-                    self.DerivOut.setText(str(simplify(calcDerivP)))
                     self.exactAns = str(simplify(calcDerivP))
+                self.DerivOut.setText(self.exactAns)
+
         else:
             if self.DerivPP.isChecked():
-                self.DerivOut.setText(str(pretty(self.exactAns)))
                 self.exactAns = str(pretty(self.exactAns))
             elif self.DerivLatex.isChecked():
-                self.DerivOut.setText(str(latex(self.exactAns)))
                 self.exactAns = str(latex(self.exactAns))
             else:
-                self.DerivOut.setText(str(self.exactAns))
+                self.exactAns = str(self.exactAns)
+            self.DerivOut.setText(self.exactAns)
 
     def calcInteg(self):
         if not self.IntegExp.toPlainText():
@@ -296,7 +295,8 @@ class Ui_MainWindow(object):
             return 0
 
         if self.IntegLower.text():
-            self.exactAns = integrate(parse_expr(self.IntegExp.toPlainText()), (parse_expr(self.IntegVar.text()), self.IntegLower.text(), self.IntegUpper.text()))
+            self.exactAns = integrate(parse_expr(self.IntegExp.toPlainText()),
+                                      (parse_expr(self.IntegVar.text()), self.IntegLower.text(), self.IntegUpper.text()))
             QApplication.processEvents()
 
             try:
@@ -309,28 +309,16 @@ class Ui_MainWindow(object):
                 self.IntegApprox.setText(str(N(self.exactAns)))
                 self.approxAns = N(N(self.exactAns))
 
-            if self.IntegPP.isChecked():
-                self.IntegOut.setText(str(pretty(self.exactAns)))
-                self.exactAns = str(pretty(self.exactAns))
-            elif self.IntegLatex.isChecked():
-                self.IntegOut.setText(str(latex(self.exactAns)))
-                self.exactAns = str(latex(self.exactAns))
-            else:
-                self.IntegOut.setText(str(self.exactAns))
-
         else:
             self.exactAns = integrate(parse_expr(self.IntegExp.toPlainText()), parse_expr(self.IntegVar.text()))
             QApplication.processEvents()
 
-            if self.IntegPP.isChecked():
-                self.IntegOut.setText(str(pretty(self.exactAns)))
-                self.exactAns = str(pretty(self.exactAns))
-            elif self.IntegLatex.isChecked():
-                self.IntegOut.setText(str(latex(self.exactAns)))
-                self.exactAns = str(latex(self.exactAns))
-            else:
-                self.IntegOut.setText(str(self.exactAns))
-                self.exactAns = str(self.exactAns)
+        if self.IntegPP.isChecked():
+            self.exactAns = str(pretty(self.exactAns))
+        elif self.IntegLatex.isChecked():
+            self.exactAns = str(latex(self.exactAns))
+        self.exactAns = str(self.exactAns)
+        self.IntegOut.setText(self.exactAns)
 
     def calcLimit(self):
         if not self.LimExp.toPlainText():
@@ -345,7 +333,6 @@ class Ui_MainWindow(object):
             self.showErrorBox("Please enter a variable")
             return 0
 
-        self.currentSide = ""
         if self.LimSide.currentIndex() == 0:
             self.currentSide = "+-"
         elif self.LimSide.currentIndex() == 1:
@@ -354,9 +341,10 @@ class Ui_MainWindow(object):
             self.currentSide = "+"
 
         try:
-            self.exactAns = limit(parse_expr(self.LimExp.toPlainText()), parse_expr(self.LimVar.text()), self.LimApproach.text(), self.currentSide)
+            self.exactAns = limit(parse_expr(self.LimExp.toPlainText()), parse_expr(self.LimVar.text()),
+                                  self.LimApproach.text(), self.currentSide)
         except ValueError:
-            self.showErrorBox("Limit deos not exist")
+            self.showErrorBox("Limit does not exist")
             return 0
 
         self.approxAns = str(N(self.exactAns))
@@ -381,24 +369,23 @@ class Ui_MainWindow(object):
         self.leftSide = str(self.EqLeft.toPlainText())
         self.rightSide = str(self.EqRight.toPlainText())
         if self.EqSolve.isChecked():
-            self.exactAns = solve(Eq(parse_expr(self.leftSide), parse_expr(self.rightSide)), parse_expr(self.EqVar.text()))
-            self.approxList = []
-            for i in self.exactAns:
-                self.approxList.append(N(i))
-            self.EqApprox.setText(str(self.approxList))
+            self.exactAns = solve(Eq(parse_expr(self.leftSide), parse_expr(self.rightSide)),
+                                  parse_expr(self.EqVar.text()))
+            approxList = [N(i) for i in self.exactAns]
+            self.EqApprox.setText(str(approxList))
         if self.EqSolveSet.isChecked():
-            self.exactAns = solveset(Eq(parse_expr(self.leftSide), parse_expr(self.rightSide)), parse_expr(self.EqVar.text()))
+            self.exactAns = solveset(Eq(parse_expr(self.leftSide), parse_expr(self.rightSide)),
+                                     parse_expr(self.EqVar.text()))
             self.approxAns = 0
 
         if self.EqPP.isChecked():
             self.exactAns = str(pretty(self.exactAns))
-            self.EqOut.setText(self.exactAns)
         elif self.EqLatex.isChecked():
             self.exactAns = str(latex(self.exactAns))
-            self.EqOut.setText(self.exactAns)
         else:
             self.exactAns = str(self.exactAns)
-            self.EqOut.setText(self.exactAns)
+        
+        self.EqOut.setText(self.exactAns)
 
     def simpEq(self):
         if not self.SimpExp.toPlainText():
@@ -410,12 +397,11 @@ class Ui_MainWindow(object):
 
         if self.SimpPP.isChecked():
             self.exactAns = str(pretty(self.exactAns))
-            self.SimpOut.setText(self.exactAns)
         elif self.SimpLatex.isChecked():
             self.exactAns = str(latex(self.exactAns))
-            self.SimpOut.setText(self.exactAns)
         else:
-            self.SimpOut.setText(str(self.exactAns))
+            self.exactAns = str(self.exactAns)
+        self.SimpOut.setText(self.exactAns)
 
     def expEq(self):
         if not self.ExpExp.toPlainText():
@@ -427,12 +413,12 @@ class Ui_MainWindow(object):
 
         if self.ExpPP.isChecked():
             self.exactAns = str(pretty(self.exactAns))
-            self.ExpOut.setText(self.exactAns)
         elif self.ExpLatex.isChecked():
             self.exactAns = str(latex(self.exactAns))
-            self.ExpOut.setText(self.exactAns)
         else:
-            self.ExpOut.setText(str(self.exactAns))
+            self.exactAns = str(self.exactAns)
+
+        self.ExpOut.setText(self.exactAns)
 
     def evalExp(self):
         if not self.EvalExp.toPlainText():
@@ -445,13 +431,12 @@ class Ui_MainWindow(object):
 
         if self.EvalPP.isChecked():
             self.exactAns = str(pretty(self.exactAns))
-            self.EvalOut.setText(self.exactAns)
         elif self.EvalLatex.isChecked():
             self.exactAns = str(latex(self.exactAns))
-            self.EvalOut.setText(self.exactAns)
         else:
             self.exactAns = str(self.exactAns)
-            self.EvalOut.setText(self.exactAns)
+
+        self.EvalOut.setText(self.exactAns)
 
     def calcPf(self):
         self.approxAns = 0
@@ -465,18 +450,17 @@ class Ui_MainWindow(object):
             self.selectedTreeItem = baseNode.text(0)
             if "=" in self.selectedTreeItem:
                 expr = self.selectedTreeItem.split("=")
-                #expr = list(map(lambda x: x.replace("_i", "(sqrt(-1))"), expr))
-                self.FormulaSymbolsList = []
-                [self.FormulaSymbolsList.append(i) for i in list(parse_expr(expr[0], _clash1).atoms(Symbol))]
-                [self.FormulaSymbolsList.append(i) for i in list(parse_expr(expr[1], _clash1).atoms(Symbol))]
-                self.FormulaSymbolsList = list(map(lambda x: str(x), self.FormulaSymbolsList))
+                # expr = list(map(lambda x: x.replace("_i", "(sqrt(-1))"), expr))
+                self.FormulaSymbolsList = [str(i) for i in list(parse_expr(expr[0], _clash1).atoms(Symbol))]
+                self.FormulaSymbolsList.extend((str(i) for i in list(parse_expr(expr[1], _clash1).atoms(Symbol))))
                 self.FormulaUpdateVars()
                 self.FormulaInfo = self.FormulaGetInfo(self.selectedTreeItem, self.FormulaTreeData)
                 self.FormulaSetInfoText()
 
     def FormulaSetInfoText(self):
         _translate = QtCore.QCoreApplication.translate
-        lines = [[self.FormulaScrollArea.findChild(QtWidgets.QLineEdit, str(i) + "line"), i] for i in self.FormulaLabelNames]
+        lines = [[self.FormulaScrollArea.findChild(QtWidgets.QLineEdit, str(i) + "line"), i] for i in
+                 self.FormulaLabelNames]
         for line in lines:
             for i in self.FormulaInfo:
                 FormulaInfoList = i.split("|")
@@ -496,7 +480,8 @@ class Ui_MainWindow(object):
         self.FormulaLabelNames = self.FormulaSymbolsList
         self.FormulaLabelPos = [[i, 0] for i in range(len(self.FormulaLabelNames))]
         self.FormulaLinePos = [[i, 1] for i in range(len(self.FormulaLabelNames))]
-        for self.FormulaNameLabel, FormulaPosLabel, FormulaPosLine in zip(self.FormulaLabelNames, self.FormulaLabelPos, self.FormulaLinePos):
+        for self.FormulaNameLabel, FormulaPosLabel, FormulaPosLine in zip(self.FormulaLabelNames, self.FormulaLabelPos,
+                                                                          self.FormulaLinePos):
             self.FormulaLabel = QLabel(self.FormulaScrollArea)
             self.FormulaLabel.setText(self.FormulaNameLabel)
             self.FormulaGrid2.addWidget(self.FormulaLabel, *FormulaPosLabel)
@@ -535,10 +520,11 @@ class Ui_MainWindow(object):
                 var = varVarList[0]
             else:
                 var = emptyVarList[0]
-            valuesString = self.selectedTreeItem
-            leftSide = valuesString.split("=")[0]
-            rightSide = valuesString.split("=")[1]
-            self.exactAns = solve(Eq(parse_expr(leftSide, _clash1), parse_expr(rightSide, _clash1)), parse_expr(var, _clash1))
+            valuesString = self.selectedTreeItem.split("=")
+            leftSide = valuesString[0]
+            rightSide = valuesString[1]
+            self.exactAns = solve(Eq(parse_expr(leftSide, _clash1), parse_expr(rightSide, _clash1)),
+                                  parse_expr(var, _clash1))
             self.approxAns = 0
             if self.FormulaPP.isChecked():
                 if self.FormulaExact.toPlainText() == "" or self.FormulaExact.toPlainText()[0:10] == "Right side":
@@ -588,10 +574,12 @@ class Ui_MainWindow(object):
             leftSide = valuesString.split("=")[0]
             rightSide = valuesString.split("=")[1]
             if self.FormulaSolveSolve.isChecked():
-                self.exactAns = solve(Eq(parse_expr(leftSide, _clash1), parse_expr(rightSide, _clash1)), parse_expr(var, _clash1))
+                self.exactAns = solve(Eq(parse_expr(leftSide, _clash1), parse_expr(rightSide, _clash1)),
+                                      parse_expr(var, _clash1))
                 self.approxAns = list(map(lambda x: N(x), self.exactAns))
             if self.FormulaSolveSolveSet.isChecked():
-                self.exactAns = solveset(Eq(parse_expr(leftSide, _clash1), parse_expr(rightSide, _clash1)), parse_expr(var, _clash1))
+                self.exactAns = solveset(Eq(parse_expr(leftSide, _clash1), parse_expr(rightSide, _clash1)),
+                                         parse_expr(var, _clash1))
                 self.approxAns = 0
             if self.FormulaPP.isChecked():
                 self.FormulaExact.setText(str(pretty(self.exactAns)))
@@ -1362,14 +1350,16 @@ class Ui_MainWindow(object):
         self.DerivVar.setStatusTip(_translate("MainWindow", "Derivative with respect to variable"))
         self.DerivVar.setWhatsThis(_translate("MainWindow", "Variable"))
         self.DerivPoint.setToolTip(_translate("MainWindow", "Calculate the derivative at a point"))
-        self.DerivPoint.setStatusTip(_translate("MainWindow", "Calculate the derivative at a point, leave blank for at point x"))
+        self.DerivPoint.setStatusTip(
+            _translate("MainWindow", "Calculate the derivative at a point, leave blank for at point x"))
         self.DerivPoint.setWhatsThis(_translate("MainWindow", "Calculate the derivative at a point"))
         self.label_3.setText(_translate("MainWindow", "Variable"))
         self.DerivOut.setToolTip(_translate("MainWindow", "Output"))
         self.DerivOut.setStatusTip(_translate("MainWindow", "Output in exact form"))
         self.DerivOut.setWhatsThis(_translate("MainWindow", "Output in exact form"))
         self.DerivApprox.setToolTip(_translate("MainWindow", "Output"))
-        self.DerivApprox.setStatusTip(_translate("MainWindow", "Output in approximate form, will only show when the derivative is calculated at a certain point"))
+        self.DerivApprox.setStatusTip(_translate("MainWindow",
+                                                 "Output in approximate form, will only show when the derivative is calculated at a certain point"))
         self.DerivApprox.setWhatsThis(_translate("MainWindow", "Output in approximate form"))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.Deriv), _translate("MainWindow", "Derivative"))
         self.IntegExp.setToolTip(_translate("MainWindow", "Your expression"))
@@ -1381,11 +1371,13 @@ class Ui_MainWindow(object):
         self.IntegOut.setWhatsThis(_translate("MainWindow", "Output in exact form"))
         self.label_2.setText(_translate("MainWindow", "From"))
         self.IntegLower.setToolTip(_translate("MainWindow", "Lower boundry"))
-        self.IntegLower.setStatusTip(_translate("MainWindow", "Lower boundry, infinity is \"oo\", leave empty for indefinite integral"))
+        self.IntegLower.setStatusTip(
+            _translate("MainWindow", "Lower boundry, infinity is \"oo\", leave empty for indefinite integral"))
         self.IntegLower.setWhatsThis(_translate("MainWindow", "Lower boundry"))
         self.label_5.setText(_translate("MainWindow", "To"))
         self.IntegUpper.setToolTip(_translate("MainWindow", "Upper boundry"))
-        self.IntegUpper.setStatusTip(_translate("MainWindow", "Upper boundry, infinity is \"oo\", leave empty for indefinite integral"))
+        self.IntegUpper.setStatusTip(
+            _translate("MainWindow", "Upper boundry, infinity is \"oo\", leave empty for indefinite integral"))
         self.IntegUpper.setWhatsThis(_translate("MainWindow", "Upper boundry"))
         self.label_4.setText(_translate("MainWindow", "Variable"))
         self.IntegVar.setToolTip(_translate("MainWindow", "Variable"))
@@ -1410,7 +1402,8 @@ class Ui_MainWindow(object):
         self.IntegNormal.setWhatsThis(_translate("MainWindow", "Normal"))
         self.IntegNormal.setText(_translate("MainWindow", "Normal"))
         self.IntegApprox.setToolTip(_translate("MainWindow", "Output"))
-        self.IntegApprox.setStatusTip(_translate("MainWindow", "Output in approximate form, will only show when a definite integral is calculated"))
+        self.IntegApprox.setStatusTip(_translate("MainWindow",
+                                                 "Output in approximate form, will only show when a definite integral is calculated"))
         self.IntegApprox.setWhatsThis(_translate("MainWindow", "Output in approximate form"))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.Integ), _translate("MainWindow", "Integral"))
         self.LimExp.setToolTip(_translate("MainWindow", "Your expression"))
@@ -1622,6 +1615,7 @@ class Ui_MainWindow(object):
         self.actionLine_Wrap.triggered.connect(self.toggleWrap)
         self.menuWeb.setTitle(_translate("MainWindow", "Web"))
 
+
 if __name__ == "__main__":
     ### For Debugging purposes, Removing the comments from the next 6 rows will catch and print all errors that occurs
     def excepthook(exc_type, exc_value, exc_tb):
@@ -1629,6 +1623,8 @@ if __name__ == "__main__":
         print("error catched!:")
         print("error message:\n", tb)
         QtWidgets.QApplication.quit()
+
+
     sys.excepthook = excepthook
     e = Ui_MainWindow()
     print("Debug mode")
