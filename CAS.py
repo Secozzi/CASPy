@@ -26,7 +26,6 @@ class Ui_MainWindow(object):
         super(Ui_MainWindow, self).__init__(*args, **kwargs)
 
         self.exactAns = ""
-        self.currentSide = ""
 
         self.approxAns = 0
 
@@ -122,10 +121,8 @@ class Ui_MainWindow(object):
         if not self.checkLimit():
             return 0
 
-        self.currentSide = self.getCurrentSide()
-
         self.exactAns = Limit(parse_expr(self.LimExp.toPlainText()), parse_expr(self.LimVar.text()),
-                              self.LimApproach.text(), self.currentSide)
+                              self.LimApproach.text(), self.getCurrentSide())
         self.approxAns = 0
         if self.LimPP.isChecked():
             self.LimOut.setText(str(pretty(self.exactAns)))
@@ -271,7 +268,8 @@ class Ui_MainWindow(object):
         if self.IntegLower.text():
             self.exactAns = integrate(parse_expr(self.IntegExp.toPlainText()),
                                       (
-                                      parse_expr(self.IntegVar.text()), self.IntegLower.text(), self.IntegUpper.text()))
+                                          parse_expr(self.IntegVar.text()), self.IntegLower.text(),
+                                          self.IntegUpper.text()))
             QApplication.processEvents()
 
             try:
@@ -309,7 +307,7 @@ class Ui_MainWindow(object):
             return False
 
         return True
-    
+
     def getCurrentSide(self):
         if self.LimSide.currentIndex() == 0:
             return "+-"
@@ -321,12 +319,10 @@ class Ui_MainWindow(object):
     def calcLimit(self):
         if not self.checkLimit():
             return 0
-        
-        self.currentSide = self.getCurrentSide()
 
         try:
             self.exactAns = limit(parse_expr(self.LimExp.toPlainText()), parse_expr(self.LimVar.text()),
-                                  self.LimApproach.text(), self.currentSide)
+                                  self.LimApproach.text(), self.getCurrentSide())
         except ValueError:
             self.showErrorBox("Limit does not exist")
             return 0
