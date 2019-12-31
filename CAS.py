@@ -119,24 +119,10 @@ class Ui_MainWindow(object):
         self.IntegOut.setText(self.exactAns)
 
     def prevLimit(self):
-        if not self.LimExp.toPlainText():
-            self.showErrorBox("Please enter an expression")
+        if not self.checkLimit():
             return 0
 
-        if not self.LimApproach.text():
-            self.showErrorBox("Please enter value that the variable approaches")
-            return 0
-
-        if not self.LimVar.text():
-            self.showErrorBox("Please enter a variable")
-            return 0
-
-        if self.LimSide.currentIndex() == 0:
-            self.currentSide = "+-"
-        elif self.LimSide.currentIndex() == 1:
-            self.currentSide = "-"
-        else:
-            self.currentSide = "+"
+        self.currentSide = self.getCurrentSide()
 
         self.exactAns = Limit(parse_expr(self.LimExp.toPlainText()), parse_expr(self.LimVar.text()),
                               self.LimApproach.text(), self.currentSide)
@@ -309,25 +295,34 @@ class Ui_MainWindow(object):
         self.exactAns = str(self.exactAns)
         self.IntegOut.setText(self.exactAns)
 
-    def calcLimit(self):
+    def checkLimit(self):
         if not self.LimExp.toPlainText():
             self.showErrorBox("Please enter an expression")
-            return 0
+            return False
 
         if not self.LimApproach.text():
             self.showErrorBox("Please enter value that the variable approaches")
-            return 0
+            return False
 
         if not self.LimVar.text():
             self.showErrorBox("Please enter a variable")
-            return 0
+            return False
 
+        return True
+    
+    def getCurrentSide(self):
         if self.LimSide.currentIndex() == 0:
-            self.currentSide = "+-"
+            return "+-"
         elif self.LimSide.currentIndex() == 1:
-            self.currentSide = "-"
+            return "-"
         else:
-            self.currentSide = "+"
+            return "+"
+
+    def calcLimit(self):
+        if not self.checkLimit():
+            return 0
+        
+        self.currentSide = self.getCurrentSide()
 
         try:
             self.exactAns = limit(parse_expr(self.LimExp.toPlainText()), parse_expr(self.LimVar.text()),
