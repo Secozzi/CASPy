@@ -9,16 +9,16 @@ from sympy import *
 from sympy.parsing.sympy_parser import parse_expr
 from sympy.abc import _clash1
 
-x, y, z, t = symbols('x y z t')
-k, m, n = symbols('k m n', integer=True)
-f, g, h = symbols('f g h', cls=Function)
-
 from pyperclip import copy
 
 import os
 import sys
 import json
 import traceback
+
+x, y, z, t = symbols('x y z t')
+k, m, n = symbols('k m n', integer=True)
+f, g, h = symbols('f g h', cls=Function)
 
 
 class Ui_MainWindow(object):
@@ -99,40 +99,24 @@ class Ui_MainWindow(object):
         self.DerivOut.setText(self.exactAns)
 
     def prevInteg(self):
-        if not self.IntegExp.toPlainText():
-            self.showErrorBox("Please enter an expression")
-            return 0
-
-        if not self.IntegVar.text():
-            self.showErrorBox("Please enter a variable")
+        if not self.checkInteg():
             return 0
 
         self.approxAns = 0
-        if (self.IntegLower.text() and not self.IntegUpper.text()) or (not self.IntegLower.text() and self.IntegUpper.text()):
-            self.showErrorBox("Please enter both upper and lower")
-            return 0
-
         if self.IntegLower.text():
             self.exactAns = Integral(parse_expr(self.IntegExp.toPlainText()),
                                      (parse_expr(self.IntegVar.text()), self.IntegLower.text(), self.IntegUpper.text()))
-            if self.IntegPP.isChecked():
-                self.exactAns = pretty(self.exactAns)
-            elif self.IntegLatex.isChecked():
-                self.exactAns = latex(self.exactAns)
-
-            self.exactAns = str(self.exactAns)
-            self.IntegOut.setText(self.exactAns)
 
         else:
             self.exactAns = Integral(parse_expr(self.IntegExp.toPlainText()), parse_expr(self.IntegVar.text()))
 
-            if self.IntegPP.isChecked():
-                self.exactAns = pretty(self.exactAns)
-            elif self.IntegLatex.isChecked():
-                self.exactAns = latex(self.exactAns)
+        if self.IntegPP.isChecked():
+            self.exactAns = pretty(self.exactAns)
+        elif self.IntegLatex.isChecked():
+            self.exactAns = latex(self.exactAns)
 
-            self.exactAns = str(self.exactAns)
-            self.IntegOut.setText(self.exactAns)
+        self.exactAns = str(self.exactAns)
+        self.IntegOut.setText(self.exactAns)
 
     def prevLimit(self):
         if not self.LimExp.toPlainText():
@@ -179,19 +163,17 @@ class Ui_MainWindow(object):
                 self.EqToOut = "Left side, click again for right side\n"
                 self.EqToOut += str(pretty(parse_expr(self.EqLeft.toPlainText())))
                 self.exactAns = self.EqToOut
-                self.EqOut.setText(self.exactAns)
             else:
                 self.EqToOut = "Right side, click again for left side\n"
                 self.EqToOut += str(pretty(parse_expr(self.EqRight.toPlainText())))
                 self.exactAns = self.EqToOut
-                self.EqOut.setText(self.exactAns)
         elif self.EqLatex.isChecked():
             self.exactAns = latex(parse_expr(self.EqLeft.toPlainText())) + " = " + latex(
                 parse_expr(self.EqRight.toPlainText()))
-            self.EqOut.setText(self.exactAns)
         else:
             self.exactAns = str(self.EqLeft.toPlainText()) + " = " + str(self.EqRight.toPlainText())
-            self.EqOut.setText(self.exactAns)
+
+        self.EqOut.setText(str(self.exactAns))
         self.EqApprox.setText(str(self.approxAns))
 
     def prevSimpEq(self):
@@ -233,13 +215,12 @@ class Ui_MainWindow(object):
 
         if self.EvalPP.isChecked():
             self.exactAns = str(pretty(self.EvalExp.toPlainText()))
-            self.EvalOut.setText(self.exactAns)
         elif self.EvalLatex.isChecked():
             self.exactAns = str(latex(self.EvalExp.toPlainText()))
-            self.EvalOut.setText(self.exactAns)
         else:
             self.exactAns = str(self.exactAns)
-            self.EvalOut.setText(self.exactAns)
+
+        self.EvalOut.setText(self.exactAns)
 
     def calcDeriv(self):
         if not self.DerivExp.toPlainText():
@@ -281,22 +262,30 @@ class Ui_MainWindow(object):
                 self.exactAns = str(self.exactAns)
             self.DerivOut.setText(self.exactAns)
 
-    def calcInteg(self):
+    def checkInteg(self):
         if not self.IntegExp.toPlainText():
             self.showErrorBox("Please enter an expression")
-            return 0
-
-        if (self.IntegLower.text() and not self.IntegUpper.text()) or (not self.IntegLower.text() and self.IntegUpper.text()):
-            self.showErrorBox("Please enter both upper and lower")
-            return 0
+            return False
 
         if not self.IntegVar.text():
             self.showErrorBox("Please enter a variable")
+            return False
+
+        if (self.IntegLower.text() and not self.IntegUpper.text()) or (
+                not self.IntegLower.text() and self.IntegUpper.text()):
+            self.showErrorBox("Please enter both upper and lower")
+            return False
+
+        return True
+
+    def calcInteg(self):
+        if not self.checkInteg():
             return 0
 
         if self.IntegLower.text():
             self.exactAns = integrate(parse_expr(self.IntegExp.toPlainText()),
-                                      (parse_expr(self.IntegVar.text()), self.IntegLower.text(), self.IntegUpper.text()))
+                                      (
+                                      parse_expr(self.IntegVar.text()), self.IntegLower.text(), self.IntegUpper.text()))
             QApplication.processEvents()
 
             try:
@@ -384,7 +373,7 @@ class Ui_MainWindow(object):
             self.exactAns = str(latex(self.exactAns))
         else:
             self.exactAns = str(self.exactAns)
-        
+
         self.EqOut.setText(self.exactAns)
 
     def simpEq(self):
@@ -1234,7 +1223,16 @@ class Ui_MainWindow(object):
 
         self.Shell = QtWidgets.QWidget()
         self.Shell.setObjectName("Shell")
-        self.currentCode = "This is a very simple shell using 'exec' commands, so it has some limitations.\nEvery variable declared and function defined will be saved until the program is closed or when the 'clear commands' button in the menubar is pressed.\nIt will automatically output to the shell, but it can't use 'print' commands. To copy output, press the 'copy exact answer' in the menubar\nTheses commands were executed:\nfrom __future__ import division\nfrom sympy import *\nfrom sympy.parsing.sympy_parser import parse_expr\nfrom sympy.abc import _clash1\nx, y, z, t = symbols('x y z t')\nk, m, n = symbols('k m n', integer=True)\nf, g, h = symbols('f g h', cls=Function)\n\n>>> "
+        self.currentCode = "This is a very simple shell using 'exec' commands, so it has some limitations.\n" \
+                           "Every variable declared and function defined will be saved until the program is closed" \
+                           " or when the 'clear commands' button in the menubar is pressed.\n" \
+                           "It will automatically output to the shell, but it can't use 'print' commands. To copy" \
+                           " output, press the 'copy exact answer' in the menubar\nTheses commands were executed:\n" \
+                           "from __future__ import division\n" \
+                           "from sympy import *\n" \
+                           "from sympy.parsing.sympy_parser import parse_expr\n" \
+                           "from sympy.abc import _clash1\nx, y, z, t = symbols('x y z t')\n" \
+                           "k, m, n = symbols('k m n', integer=True)\nf, g, h = symbols('f g h', cls=Function)\n\n>>> "
         self.toExecute = ""
         self.alreadyExecuted = []
         self.ShellGrid = QGridLayout(self.Shell)
