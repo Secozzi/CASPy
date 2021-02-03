@@ -1,59 +1,102 @@
 [
   {
     "name": "Integrate",
-    "fields": ["var", "lower", "upper"],
+    "input": {
+      "tooltip": "Function to integrate",
+      "default": "x"
+    },
+    "fields": ["var", "lower", "upper", "approx"],
     "var": {
+      "type": "QLineEdit",
       "label": "Variable",
       "default": "x",
       "tooltip": "Integrate with respect to variable"
     },
     "lower": {
+      "type": "QLineEdit",
       "label": "Lower bound",
       "default": "",
       "tooltip": "Indefinite integration with result given with input replacing variable if upper not given. If upper: calculate definite integral."
     },
     "upper": {
+      "type": "QLineEdit",
       "label": "Upper bound",
       "default": "",
       "tooltip": "Upperbound of integral"
+    },
+    "approx": {
+      "type": "QCheckBox",
+      "label": "Approximate",
+      "tooltip": "Approximate integral"
     }
   },
   {
     "name": "Line Integral",
-    "fields": ["field", "curve", "vars"],
-    "field": {
-      "label": "Field",
-      "default": "x+y",
-      "tooltip": "Integrate with respect to variable"
+    "input": {
+      "tooltip": "Field to integrate over",
+      "default": "x+y"
     },
+    "fields": ["curve", "vars"],
     "curve": {
+      "type": "QLineEdit",
       "label": "Curve",
       "default": "Curve((sin(t), cos(t)), (t, 0, 2))",
       "tooltip": "A curve in space, which is defined by parametric functions for the coordinates, a parameter and the lower and upper bounds for the parameter value"
     },
     "vars": {
+      "type": "QLineEdit",
       "label": "Variables",
       "default": "x, y",
       "tooltip": "List of variables, separate with a comma"
     }
   },
-    {
+  {
     "name": "Mellin Transform",
-    "fields": ["func", "var", "s"],
-    "func": {
-      "label": "Function",
-      "default": "x",
-      "tooltip": "Compute the Mellin transform F(s) of f(x)"
+    "input": {
+      "tooltip": "Compute the mellin transform F(s) of f(x), where f is input.",
+      "default": "exp(-x)"
     },
+    "fields": ["var", "s"],
     "var": {
+      "type": "QLineEdit",
       "label": "Variable",
       "default": "x",
       "tooltip": "Variable"
     },
     "s": {
+      "type": "QLineEdit",
       "label": "s",
       "default": "s",
       "tooltip": "s"
     }
+  },
+  {
+    "name": "Inverse Mellin Transform",
+    "input": {
+      "tooltip": "Compute the inverse mellin transofmr of F(s) over the fundamental strip given by strip=(a,b)",
+      "default": "gamma(s)"
+    },
+    "fields": ["s", "var", "strip"],
+    "s": {
+      "type": "QLineEdit",
+      "label": "s",
+      "default": "s",
+      "tooltip": "s"
+    },
+    "var": {
+      "type": "QLineEdit",
+      "label": "Variable",
+      "default": "x",
+      "tooltip": "Variable"
+    },
+    "strip": {
+      "type": "QLineEdit",
+      "label": "Strip (a, b)",
+      "default": "0, oo",
+      "tooltip": "One of `a` or `b` may be passed as ``None``; a suitable `c` will be inferred."
+    }
+  },
+  {
+    "name": "Laplace Transform"
   }
 ]

@@ -20,9 +20,10 @@
 import typing as ty
 
 # Third party
-from sympy.abc import _clash1, _clash2
+import matplotlib.pyplot as mpl
 from pkg_resources import resource_filename
 from pyperclip import copy
+from sympy.abc import _clash1, _clash2
 
 # PyQt5
 from PyQt5.QtCore import QSettings, QSize, QThreadPool
@@ -35,8 +36,7 @@ from PyQt5.QtWidgets import (
     QMainWindow,
     QMessageBox,
     QShortcut,
-    QWidget,
-    QLineEdit
+    QWidget
 )
 from PyQt5.uic import loadUi
 
@@ -44,6 +44,7 @@ from PyQt5.uic import loadUi
 from caspy3.qt_assets.tabs import get_tabs
 from caspy3.qt_assets.dialogs.tab_list import TabList
 from caspy3.qt_assets.dialogs.qsplitter_edit import SplitterEditor
+from caspy3.qt_assets.widgets.latex_drag_label import DragLabel
 
 
 class MainWindow(QMainWindow):
@@ -67,9 +68,10 @@ class MainWindow(QMainWindow):
         self.use_clash1: bool = False
         self.use_clash2: bool = False
         self.clashes: dict = {}
+        self.fig = mpl.figure()
 
         # Qt variables
-        self.settings: QSettings = QSettings("Secozzi", "CASPy")
+        self.settings: QSettings = QSettings(QSettings.IniFormat, QSettings.UserScope, "CASPy")
         self.qapp: QApplication = QApplication.instance()
         self.threadpool: QThreadPool = QThreadPool()
         self.tab_list: ty.List[QWidget] = get_tabs()
@@ -358,10 +360,6 @@ class MainWindow(QMainWindow):
         else:
             copy(str(self.exact_ans))
 
-        # TODO: select output when copied
-        # if self.tab_manager.currentWidget().eout:
-        #     self.tab_manager.currentWidget().eout.selectAll()
-
     def copy_approx_ans(self) -> None:
         if type(self.approx_ans) == list:
             if len(self.approx_ans) == 1:
@@ -370,8 +368,6 @@ class MainWindow(QMainWindow):
                 copy(str(self.approx_ans))
         else:
             copy(str(self.approx_ans))
-
-        # TODO: Same as above
 
     def goto_next_tab(self) -> None:
         curr = self.tab_manager.currentIndex()
@@ -402,7 +398,8 @@ class MainWindow(QMainWindow):
             _tab = tab(main_window=self)
             self.tab_manager.addTab(_tab, tab.display_name)
             if self.use_latex:
-                _tab.out_splitter.insertWidget(1, QLineEdit(self))
+                _tab.out_splitter.insertWidget(1, DragLabel(_tab))
+            _tab.set_splitters(_tab.splitters)
 
     def init_shortcuts(self) -> None:
         cshortcut = QShortcut(QKeySequence("Ctrl+Return"), self)

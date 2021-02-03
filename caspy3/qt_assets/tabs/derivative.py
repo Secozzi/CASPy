@@ -169,8 +169,8 @@ class DerivativeTab(CaspyTab):
         self.deriv_point_input = QLineEdit()
         self.deriv_point_label = QLabel()
         self.deriv_prev = QPushButton()
-        self.deriv_splitter_0 = QSplitter()
-        self.deriv_splitter_1 = QSplitter()
+        self.deriv_main_splitter = QSplitter()
+        self.deriv_out_splitter = QSplitter()
         self.deriv_tab = QWidget()
         self.deriv_var_input = QLineEdit()
         self.deriv_var_label = QLabel()
@@ -181,20 +181,19 @@ class DerivativeTab(CaspyTab):
     def __init__(self, main_window: "MainWindow") -> None:
         super().__init__(main_window, self.name)
         loadUi(self.main_window.get_resource("qt_assets/tabs/derivative.ui"), self)
-        self.setStyleSheet(f"font-size: {self.main_window.tabs_font.pointSize()}pt; font-family: {self.main_window.tabs_font.family()};")
-        #self.setFont(self.main_window.tabs_font)
-        #self.deriv_input.setFont(self.main_window.tabs_font)
+        self.setStyleSheet(
+            f"font-size: {self.main_window.tabs_font.pointSize()}pt; font-family: {self.main_window.tabs_font.family()};"
+        )
 
         self.eout = self.deriv_exact
         self.aout = self.deriv_approx
-        self.out_splitter = self.deriv_splitter_1
+        self.out_splitter = self.deriv_out_splitter
 
         self.splitters: ty.List[QSplitter] = [
-            self.deriv_splitter_0,
-            self.deriv_splitter_1,
+            self.deriv_main_splitter,
+            self.deriv_out_splitter,
         ]
 
-        self.set_splitters(self.splitters)
         self.init_bindings()
 
     def init_bindings(self) -> None:

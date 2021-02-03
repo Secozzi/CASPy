@@ -23,7 +23,7 @@
   </property>
   <layout class="QGridLayout" name="gridLayout">
    <item row="0" column="0">
-    <widget class="QSplitter" name="deriv_splitter_0">
+    <widget class="QSplitter" name="deriv_main_splitter">
      <property name="orientation">
       <enum>Qt::Horizontal</enum>
      </property>
@@ -217,7 +217,13 @@
        </item>
       </layout>
      </widget>
-     <widget class="QSplitter" name="deriv_splitter_1">
+     <widget class="QSplitter" name="deriv_out_splitter">
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
+      </property>
       <property name="styleSheet">
        <string notr="true"/>
       </property>

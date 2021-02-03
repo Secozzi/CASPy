@@ -16,9 +16,11 @@
 #    along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #
 
+# Standard library
+import typing as ty
+
 # PyQt5
 from PyQt5.QtWidgets import (
-    QApplication,
     QComboBox,
     QHBoxLayout,
     QSplitter,
@@ -38,12 +40,12 @@ from caspy3.qt_assets.widgets.focus_line import FocusLine
 
 class SplitterEditor(QWidget):
     def __init__(self, parent) -> None:
-        super(SplitterEditor, self).__init__()
-        self.parent = parent
+        super(SplitterEditor, self).__init__(parent)
+        self._parent = parent
         self.resize(600, 400)
-        self.setWindowTitle(f"{self.parent.display_name} QSplitter Editor")
+        self.setWindowTitle(f"{self._parent.display_name} QSplitter Editor")
         self.setWindowIcon(QIcon(resource_filename("caspy3", "images/logo.png")))
-        self.setWindowModality(Qt.ApplicationModal)
+        self.setWindowFlags(Qt.Tool)
 
         self.v_layout = QVBoxLayout(self)
 
@@ -54,20 +56,24 @@ class SplitterEditor(QWidget):
         # Setup combobox
         self.splitter_combo = QComboBox(self)
         self.splitter_combo.currentIndexChanged.connect(self.update_splitter_area)
-        for splitter in self.parent.splitters:
+        for splitter in self._parent.splitters:
             self.splitter_combo.addItem(splitter.objectName())
-
-        #self.update_splitter_area(0)
 
         # Setup buttons
         self.button_layout = QHBoxLayout()
-        self.preview = QPushButton("Preview")
+        self.update_pre = QPushButton("Update Preview")
+        self.preview = QPushButton("Preview changes")
+        self.apply = QPushButton("Apply changes")
+        self.close_b = QPushButton("Close")
+        self.update_pre.clicked.connect(self.update_preview)
         self.preview.clicked.connect(self.preview_split)
-        self.ok = QPushButton("Ok")
-        self.cancel = QPushButton("Cancel")
+        self.apply.clicked.connect(self.apply_changes)
+        self.close_b.clicked.connect(self.close)
+
+        self.button_layout.addWidget(self.update_pre)
         self.button_layout.addWidget(self.preview)
-        self.button_layout.addWidget(self.ok)
-        self.button_layout.addWidget(self.cancel)
+        self.button_layout.addWidget(self.apply)
+        self.button_layout.addWidget(self.close_b)
 
         self.v_layout.addWidget(self.splitter_combo)
         self.v_layout.addWidget(self.preview_splitter)
@@ -75,47 +81,44 @@ class SplitterEditor(QWidget):
 
         self.setLayout(self.v_layout)
 
-    def update_splitter_area(self, index) -> None:
-        for i in reversed(range(self.preview_splitter.count())):
-            self.preview_splitter.widget(i).setParent(None)
-
-        splitter = self.parent.splitters[index]
-        for i in range(splitter.count()):
-            lineedit = FocusLine(self)
-            lineedit.setInputMask("99.99%")
-            self.preview_splitter.addWidget(lineedit)
-
-        self.update_splitter()
-        self.preview_splitter.setOrientation(splitter.orientation())
-
     def resizeEvent(self, event) -> None:
         self.update_splitter()
 
-    def get_data(self) -> list:
+    def update_preview(self):
+        self.preview_splitter.restoreState(
+               self._parent.splitters[self.splitter_combo.currentIndex()].saveState()
+           )
+        self.update_splitter()
+
+    def get_data(self) -> ty.List[float]:
         per_list = []
         for i in range(self.preview_splitter.count()):
+            text = self.preview_splitter.widget(i).text()
             per_list.append(
                 float(
-                    f'0.{self.preview_splitter.widget(i).text().replace(".", "").replace("%", "")}'
+                    f'0.{text.replace(".", "").replace("%", "") if text else "00"}'
                 )
             )
         return per_list
 
     def preview_split(self):
-        per_list = []
-        for i in range(self.preview_splitter.count()):
-            per_list.append(
-                float(
-                    f'0.{self.preview_splitter.widget(i).text().replace(".", "").replace("%", "")}'
-                )
-            )
-
+        per_list = self.get_data()
         if self.preview_splitter.orientation() == Qt.Horizontal:
-           _max = self.preview_splitter.width()
+            _max = self.preview_splitter.width()
         else:
-           _max = self.preview_splitter.height()
+            _max = self.preview_splitter.height()
         _max -= self.preview_splitter.handleWidth() * (self.preview_splitter.count() - 1)
-        self.preview_splitter.setSizes([int(i*_max) for i in per_list])
+        self.preview_splitter.setSizes([int(i * _max) for i in per_list])
+
+    def apply_changes(self):
+        per_list = self.get_data()
+        parent_splitter: QSplitter = self._parent.splitters[self.splitter_combo.currentIndex()]
+        if parent_splitter.orientation() == Qt.Horizontal:
+            _max = parent_splitter.width()
+        else:
+            _max = parent_splitter.height()
+        _max -= parent_splitter.handleWidth() * (parent_splitter.count() - 1)
+        parent_splitter.setSizes([int(i * _max) for i in per_list])
 
     def update_splitter(self):
         if self.preview_splitter.orientation() == Qt.Horizontal:
@@ -125,19 +128,24 @@ class SplitterEditor(QWidget):
         _max -= self.preview_splitter.handleWidth() * (
             self.preview_splitter.count() - 1
         )
-        _sizes = self.preview_splitter.sizes()
-        for j in range(self.preview_splitter.count()):
-            self.preview_splitter.widget(j).setText(f"{(_sizes[j]/_max * 100):.2f}%")
+        sizes = self.preview_splitter.sizes()
+        for i in range(self.preview_splitter.count()):
+            self.preview_splitter.widget(i).setText(f"{(sizes[i] / _max * 100):.6f}%")
 
+    def update_splitter_area(self, index):
+        for i in reversed(range(self.preview_splitter.count())):
+            self.preview_splitter.widget(i).setParent(None)
 
-if __name__ == "__main__":
-    import sys
+        splitter: QSplitter = self._parent.splitters[index]
 
-    app = QApplication(sys.argv)
+        self.preview_splitter.setOrientation(splitter.orientation())
+        for i in range(splitter.count()):
+            qline = FocusLine(self)
+            qline.setInputMask("99.999999%")
+            self.preview_splitter.addWidget(qline)
 
-    window = SplitterEditor("s")
-    window.resize(600, 400)
-    window.show()
-    window.update_splitter()
+        self.preview_splitter.restoreState(
+            self._parent.splitters[index].saveState()
+        )
 
-    app.exec_()
+        self.update_splitter()

@@ -45,6 +45,10 @@ class CaspyTab(QWidget):
             self.main_window.show_error_box(input_dict[first_key][0])
             self.main_window.latex_ans = ""
         else:
+            if self.out_splitter.count() == 3:
+                latex_label = self.out_splitter.widget(1)
+                latex_label.setFormula(input_dict["latex"])
+                latex_label.render_latex()
             self.main_window.latex_ans = input_dict["latex"]
             self.main_window.exact_ans = input_dict[first_key][0]
             self.main_window.approx_ans = input_dict[first_key][1]
